@@ -29,7 +29,7 @@ pub fn libmain() {
 #[allow(dead_code)]
 pub fn mtie (samples: &[f64]) -> Vec<f64>
 {
-    const MAX_DATA_SET_SIZE: usize = 50000; // Data sets bigger than this take too long to process!
+    const MAX_DATA_SET_SIZE: usize = 100_000; // Data sets bigger than this take too long to process!
     let count = samples.len();
     if count > MAX_DATA_SET_SIZE {
         panic!("Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than {} samples!  The input data size was {} samples.", MAX_DATA_SET_SIZE, count);
@@ -197,16 +197,16 @@ mod tests {
     #[test]
     #[ignore]
     pub fn test_large() {
-        let input = vec![0.0; 50000];
-        let expected = vec![0.0; 49999];
+        let input = vec![0.0; 100_000];
+        let expected = vec![0.0; 99_999];
         let output = mtie(&input);
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
 
     #[test]
-    #[should_panic(expected = "Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 50000 samples!  The input data size was")]
+    #[should_panic(expected = "Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 100000 samples!  The input data size was 100001 samples.")]
     pub fn test_too_large() {
-        let input = vec![0.0; 50001];
+        let input = vec![0.0; 100_001];
         let _output = mtie(&input);
     }
 
@@ -227,13 +227,11 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     pub fn test_fast_large() {
-        let mut input = Vec::new();
-        for i in 0..1000000 {
-            input.push(i as f64);
-        }
+        let input = vec!(0.0; 10_000_000);
         let output = mtie_fast(&input);
-        assert_eq!(output.len(), 19, "mtie is {:?}", output);
+        assert_eq!(output.len(), 23, "mtie is {:?}", output);
     }
 
 }
