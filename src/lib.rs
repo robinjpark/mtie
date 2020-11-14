@@ -70,12 +70,13 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
     a_m.push(Vec::new());
 
     for k in 1..k_max+1 {
+        let k = k as usize;
         let mut a_M_k = Vec::new();
         let mut a_m_k = Vec::new();
         a_M_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         a_m_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         if k == 1 {
-            let i_max = N-2_u32.pow(k)+1;
+            let i_max = N-2_u32.pow(k as u32)+1;
             for i in 1..i_max+1 {
                 let i = i as usize;
                 let val1 = samples[i-1]; // samples are indexes by 0, not 1
@@ -86,14 +87,15 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
                 a_m_k.push(min);
             }
         } else {
-            let i_max = N-2_u32.pow(k)+1;
-            let p = 2_u32.pow(k-1);
+            let i_max = N-2_u32.pow(k as u32)+1;
+            let p = 2_u32.pow((k as u32)-1) as usize;
             for i in 1..i_max+1 {
-                let max1 = a_M[(k-1) as usize][i as usize];
-                let max2 = a_M[(k-1) as usize][(i+p) as usize];
+                let i = i as usize;
+                let max1 = a_M[k-1][i];
+                let max2 = a_M[k-1][i+p];
                 let max = if max1 > max2 { max1 } else { max2 };
-                let min1 = a_m[(k-1) as usize][i as usize];
-                let min2 = a_m[(k-1) as usize][(i+p) as usize];
+                let min1 = a_m[k-1][i];
+                let min2 = a_m[k-1][i+p];
                 let min = if min1 < min2 { min1 } else { min2 };
                 a_M_k.push(max);
                 a_m_k.push(min);
@@ -106,10 +108,12 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
     let mut mtie = Vec::new();
     for k in 1..k_max+1 {
         let i_max = N-2_u32.pow(k)+1;
-        let mut mtie_k = a_M[k as usize][1] - a_m[k as usize][1];
+        let k = k as usize;
+        let mut mtie_k = a_M[k][1] - a_m[k][1];
         for i in 2..i_max+1 {
-            if a_M[k as usize][i as usize] - a_m[k as usize][i as usize] > mtie_k {
-                mtie_k = a_M[k as usize][i as usize] - a_m[k as usize][i as usize];
+            let i = i as usize;
+            if a_M[k][i] - a_m[k][i] > mtie_k {
+                mtie_k = a_M[k][i] - a_m[k][i];
             }
         }
         mtie.push(mtie_k);
