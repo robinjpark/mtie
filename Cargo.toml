@@ -1,0 +1,16 @@
+[package]
+name = "mtie"
+version = "0.1.0"
+authors = ["Robin Park <robin.j.park@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "mtielib"
+path = "src/lib.rs"
+
+[[bin]]
+name = "mtie"
+path = "src/main.rs"
+
