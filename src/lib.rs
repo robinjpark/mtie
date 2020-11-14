@@ -59,11 +59,8 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf
 pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
 {
-    //println!("samples {:?}", samples);
     let N = samples.len() as u32;
-    //println!("N {}", N);
     let k_max = (N as f64).log2() as u32;
-    println!("k_max {}", k_max);
 
     let mut a_M : std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
     let mut a_m : std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
@@ -72,65 +69,49 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
     a_M.push(Vec::new());
     a_m.push(Vec::new());
 
-    println!("k: 1..{}", k_max);
     for k in 1..k_max+1 {
-        //println!("");
-        //println!("k {}", k);
-
         let mut a_M_k = Vec::new();
         let mut a_m_k = Vec::new();
         a_M_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         a_m_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         if k == 1 {
             let i_max = N-2_u32.pow(k)+1;
-            //println!("i: 1..{}", i_max);
             for i in 1..i_max+1 {
                 let i = i as usize;
                 let val1 = samples[i-1]; // samples are indexes by 0, not 1
                 let val2 = samples[i];
                 let max = if val1 > val2 { val1 } else { val2 };
                 let min = if val1 < val2 { val1 } else { val2 };
-                //println!("k {}, i {}: samples {} {}, max {}, min {}", k, i, val1, val2, max, min);
                 a_M_k.push(max);
                 a_m_k.push(min);
             }
         } else {
             let i_max = N-2_u32.pow(k)+1;
             let p = 2_u32.pow(k-1);
-            //println!("p is {} for k={}", p, k);
-            //println!("i: 1..{}", i_max);
             for i in 1..i_max+1 {
                 let max1 = a_M[(k-1) as usize][i as usize];
                 let max2 = a_M[(k-1) as usize][(i+p) as usize];
                 let max = if max1 > max2 { max1 } else { max2 };
-                //println!("k {}, i {}: max {} {}, max {}", k, i, max1, max2, max);
                 let min1 = a_m[(k-1) as usize][i as usize];
                 let min2 = a_m[(k-1) as usize][(i+p) as usize];
                 let min = if min1 < min2 { min1 } else { min2 };
-                //println!("k {}, i {}: min {} {}, min {}", k, i, min1, min2, min);
                 a_M_k.push(max);
                 a_m_k.push(min);
             }
         }
-        //println!("k == {}: maximums {:?}", k, a_M_k);
-        //println!("k == {}: minimums {:?}", k, a_m_k);
         a_M.push(a_M_k);
         a_m.push(a_m_k);
     }
 
     let mut mtie = Vec::new();
     for k in 1..k_max+1 {
-        //println!("k {}", k);
         let i_max = N-2_u32.pow(k)+1;
         let mut mtie_k = a_M[k as usize][1] - a_m[k as usize][1];
-        //println!("mtie for k={} initted with {}", k, mtie_k);
         for i in 2..i_max+1 {
             if a_M[k as usize][i as usize] - a_m[k as usize][i as usize] > mtie_k {
                 mtie_k = a_M[k as usize][i as usize] - a_m[k as usize][i as usize];
-                println!("mtie for k={} is now {}", k, mtie_k);
             }
         }
-        println!("mtie for k={} (t={}) is {}", k, 2_i32.pow(k) - 1, mtie_k);
         mtie.push(mtie_k);
     }
 
