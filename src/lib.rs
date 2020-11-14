@@ -29,9 +29,10 @@ pub fn libmain() {
 #[allow(dead_code)]
 pub fn mtie (samples: &[f64]) -> Vec<f64>
 {
+    const MAX_DATA_SET_SIZE: usize = 50000; // Data sets bigger than this take too long to process!
     let count = samples.len();
-    if count > 50000 {
-        panic!("Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 50000 samples!  The input data size was {} samples.", count);
+    if count > MAX_DATA_SET_SIZE {
+        panic!("Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than {} samples!  The input data size was {} samples.", MAX_DATA_SET_SIZE, count);
     }
 
     let mut mtie = Vec::new();
