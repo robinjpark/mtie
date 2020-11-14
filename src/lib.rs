@@ -36,10 +36,8 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
     }
 
     let mut mtie = Vec::new();
-    //println!("Input has {} samples", count);
 
     for tau in 1..count {
-        //println!("tau {}", tau);
         let mut maximum = 0.0;
         for interval_start in 0..count-tau {
             let left_value = samples[interval_start];
@@ -52,7 +50,6 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
         mtie.push(maximum);
     }
 
-    //println!("mtie {:?}", mtie);
     mtie
 }
 
