@@ -6,6 +6,10 @@
 //! the application is split into a binary and library to overcome
 //! limitations on doc-tests, which can only run in library crates.
 
+#[cfg(test)]
+#[macro_use]
+extern crate time_test;
+
 /// The entry point for the "library", which implements the game.
 pub fn libmain() {
     println!("Library main function!");
@@ -195,8 +199,9 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore] // Normally ignore, because it takes a long time in debug builds.
     pub fn test_large() {
+        time_test!();
         let input = vec![0.0; 100_000];
         let expected = vec![0.0; 99_999];
         let output = mtie(&input);
@@ -227,11 +232,12 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore] // Normally ignore, because it takes a long time in debug builds.
     pub fn test_fast_large() {
-        let input = vec!(0.0; 10_000_000);
+        time_test!();
+        let input = vec!(0.0; 20_000_000);
         let output = mtie_fast(&input);
-        assert_eq!(output.len(), 23, "mtie is {:?}", output);
+        assert_eq!(output.len(), 24, "mtie is {:?}", output);
     }
 
 }

@@ -14,3 +14,5 @@ path = "src/lib.rs"
 name = "mtie"
 path = "src/main.rs"
 
+[dependencies]
+time-test = "0.2.2"
