@@ -1,6 +1,5 @@
 //! The library crate for the MTIE application.
 
-extern crate clap;
 #[cfg(test)]
 #[macro_use]
 extern crate time_test;
