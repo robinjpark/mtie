@@ -28,17 +28,22 @@ fn get_tie_input_data() -> String
     buffer
 }
 
-// TODO: Error handling.  The input may not be valid!!!
+// TODO: Error handling
+// The current code simply ignores any invalid input, outputting an error message to standard error.  Is that appropriate?
 fn parse_tie_input_data(input: String) -> Vec<f64>
 {
     let mut numbers = Vec::new();
 
     let lines: Vec<&str> = input.lines().collect();
-    for line in lines {
-        let line = line.trim();
-        if !line.is_empty() {
-            let number: f64 = line.parse().unwrap(); // TODO: Error handling!
-            numbers.push(number);
+    for (line_number, line) in lines.iter().enumerate() {
+        let trimmed = line.trim();
+        if !trimmed.is_empty() {
+            let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
+            let parse_result =  trimmed.parse::<f64>();
+            match parse_result {
+                Ok(number) => numbers.push(number),
+                Err(_error) => eprintln!("Ignoring line {} '{}': it does not contain a valid number", line_number, line),
+            }
         }
     }
 
@@ -187,6 +192,12 @@ mod tests {
         let input = "1.0\n    \n2.0".to_string();
         let numbers = parse_tie_input_data(input);
         assert_eq!(numbers, vec![1.0, 2.0]);
+    }
+
+    #[test]
+    pub fn test_invalid_input() {
+        let input = "1\nnot_a_number".to_string();
+        let _numbers = parse_tie_input_data(input);
     }
 
     #[test]
