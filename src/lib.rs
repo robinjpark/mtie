@@ -114,6 +114,7 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
 
     let mut mtie = Vec::new();
 
+    let mut prev_maximum = 0.0;
     for tau in 1..count {
         let mut maximum = 0.0;
         for interval_start in 0..count-tau {
@@ -124,13 +125,11 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
                 maximum = difference;
             }
         }
-        if tau != 1 {
-            let prev_maximum = *mtie.last().unwrap();
-            if prev_maximum > maximum {
-                maximum = prev_maximum;
-            }
+        if prev_maximum > maximum {
+            maximum = prev_maximum;
         }
         mtie.push(maximum);
+        prev_maximum = maximum;
     }
 
     check_monotomically_increasing(&mtie);
