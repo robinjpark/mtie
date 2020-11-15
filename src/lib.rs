@@ -12,7 +12,7 @@ pub fn libmain() {
     let input_filename = parse_arguments();
     let input = get_tie_input_data(input_filename);
     let tie = parse_tie_input_data(input);
-    println!("tie {:?}", tie);
+    //println!("tie {:?}", tie);
     let mtie = mtie(&tie);
     print_mtie(&mtie);
 }
@@ -124,9 +124,16 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
                 maximum = difference;
             }
         }
+        if tau != 1 {
+            let prev_maximum = *mtie.last().unwrap();
+            if prev_maximum > maximum {
+                maximum = prev_maximum;
+            }
+        }
         mtie.push(maximum);
     }
 
+    check_monotomically_increasing(&mtie);
     mtie
 }
 
@@ -196,7 +203,17 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
         mtie.push(mtie_k);
     }
 
+    check_monotomically_increasing(&mtie);
     mtie
+}
+
+fn check_monotomically_increasing(mtie: &[f64])
+{
+    for (index, window) in mtie.windows(2).enumerate() {
+        if window[1] < window[0] {
+            panic!("MTIE is not monotomically increasing! indices {}-{} contains {} and {}.", index, index+1, window[0], window[1]);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -301,6 +318,14 @@ mod tests {
     }
 
     #[test]
+    pub fn test_oscillating() {
+        let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0];
+        let expected = vec![1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0];
+        let output = mtie(&input);
+        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+    }
+
+    #[test]
     #[ignore] // Normally ignore, because it takes a long time in debug builds.
     pub fn test_large() {
         time_test!();
@@ -341,6 +366,5 @@ mod tests {
         let output = mtie_fast(&input);
         assert_eq!(output.len(), 24, "mtie is {:?}", output);
     }
-
 }
 
