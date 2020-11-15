@@ -1,17 +1,11 @@
-//! The library crate.
-//!
-//! It implements the entire application.
-//!
-//! Although this library is only meant for the single binary,
-//! the application is split into a binary and library to overcome
-//! limitations on doc-tests, which can only run in library crates.
+//! The library crate for the MTIE application.
 
 extern crate clap;
 #[cfg(test)]
 #[macro_use]
 extern crate time_test;
 
-/// The entry point for the "library", which implements the game.
+/// The entry point for the "library", which implements the mtie application.
 pub fn libmain() {
     parse_arguments();
     let input = get_tie_input_data();
