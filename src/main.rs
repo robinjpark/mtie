@@ -6,6 +6,5 @@ extern crate mtielib;
 ///
 /// It simply calls the main() function in the associated library.
 fn main() {
-    println!("main");
     mtielib::libmain();
 }

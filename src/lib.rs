@@ -12,8 +12,40 @@ extern crate time_test;
 
 /// The entry point for the "library", which implements the game.
 pub fn libmain() {
-    println!("Library main function!");
-    panic!("Write me!");
+    let input = get_tie_input_data();
+    let tie = parse_tie_input_data(input);
+    println!("tie {:?}", tie);
+    let mtie = mtie(&tie);
+    print_mtie(&mtie);
+}
+
+use std::io::Read;
+
+fn get_tie_input_data() -> String
+{
+    let mut buffer = String::new();
+    std::io::stdin().read_to_string(&mut buffer).unwrap();
+    buffer
+}
+
+fn parse_tie_input_data(input: String) -> Vec<f64>
+{
+    let mut numbers = Vec::new();
+
+    let lines: Vec<&str> = input.lines().collect();
+    for line in lines {
+        let number: f64 = line.parse().unwrap();
+        numbers.push(number);
+    }
+
+    numbers
+}
+
+fn print_mtie(mtie: &[f64])
+{
+    for val in mtie {
+        println!("{}", val);
+    }
 }
 
 /// Calculates the MTIE of a set of evenly spaced samples
@@ -30,7 +62,6 @@ pub fn libmain() {
 /// If the input contained N samples, the output will contains N-1 values:
 /// * The first value contains the calculated MTIE for an interval of one unit.
 /// * The last value contains the MTIE for the maximum interval.
-#[allow(dead_code)]
 pub fn mtie (samples: &[f64]) -> Vec<f64>
 {
     const MAX_DATA_SET_SIZE: usize = 100_000; // Data sets bigger than this take too long to process!
