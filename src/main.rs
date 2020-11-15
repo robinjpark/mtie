@@ -6,5 +6,8 @@ extern crate mtielib;
 ///
 /// It simply calls the main() function in the associated library.
 fn main() {
-    mtielib::libmain();
+    if let Err(err) = mtielib::run() {
+        eprintln!("Error: {:?}", err);
+        std::process::exit(1);
+    }
 }

@@ -5,16 +5,18 @@ extern crate clap;
 #[macro_use]
 extern crate time_test;
 
+use anyhow::Context;
 use std::io::Read;
 
 /// The entry point for the "library", which implements the mtie application.
-pub fn libmain() {
+pub fn run() -> anyhow::Result<()> {
     let input_filename = parse_arguments();
-    let input = get_tie_input_data(input_filename);
+    let input = get_tie_input_data(input_filename).context("failed to get TIE input data")?;
     let tie = parse_tie_input_data(input);
     //println!("tie {:?}", tie);
     let mtie = mtie(&tie);
     print_mtie(&mtie);
+    Ok(())
 }
 
 // Parses the command line arguments, returning the input filename, if specified
@@ -40,17 +42,11 @@ fn parse_arguments() -> Option<String> {
     input_file.map(str::to_string)
 }
 
-fn get_tie_input_data(input_filename: Option<String>) -> String
+fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String>
 {
     let buffer = match input_filename {
         Some(input_filename) => {
-            match std::fs::read_to_string(&input_filename) {
-                Ok(file_contents) => file_contents,
-                Err(error) => {
-                    eprintln!("Error reading file '{}': {}", input_filename, error);
-                    "".to_string()
-                }
-            }
+            std::fs::read_to_string(&input_filename).with_context(|| format!("Could not read file '{}'", input_filename))?
         },
         None => {
             let mut buffer = String::new();
@@ -58,7 +54,7 @@ fn get_tie_input_data(input_filename: Option<String>) -> String
             buffer
         }
     };
-    buffer
+    Ok(buffer)
 }
 
 // TODO: Error handling
