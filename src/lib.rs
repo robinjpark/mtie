@@ -5,31 +5,59 @@ extern crate clap;
 #[macro_use]
 extern crate time_test;
 
+use std::io::Read;
+
 /// The entry point for the "library", which implements the mtie application.
 pub fn libmain() {
-    parse_arguments();
-    let input = get_tie_input_data();
+    let input_filename = parse_arguments();
+    let input = get_tie_input_data(input_filename);
     let tie = parse_tie_input_data(input);
     println!("tie {:?}", tie);
     let mtie = mtie(&tie);
     print_mtie(&mtie);
 }
 
-fn parse_arguments() {
-    let _matches = clap::App::new("mtie")
+// Parses the command line arguments, returning the input filename, if specified
+fn parse_arguments() -> Option<String> {
+    let long_about = "Calculates MTIE from a series of TIE input data.\n\n\
+                      The TIE input data is expected to be in text format, with one number per line.\n\
+                      This program assumes that the input data was sampled at a uniform rate,\n\
+                      and is unaware of the sampling rate of the data.";
+    let input_help = "Specifies the file containing the TIE input data.\n\
+                      If this option is not given, TIE input data is taken from standard input.";
+    let matches = clap::App::new("mtie")
                                 .version("0.1")
                                 .author("Robin Park <robin.j.park@gmail.com>")
-                                .about("Calculates MTIE from a set of TIE data")
-                                .long_about("Calculates MTIE from a set of TIE data.\n\nThe TIE data is passed via standard input, with one sample per line.  This program assumes that the data is evenly spaced, and is unaware of the sampling rate of the data.")
+                                .about("Calculates MTIE from a set of TIE data.")
+                                .long_about(long_about)
+                                .arg(clap::Arg::with_name("input")
+                                     .help(input_help)
+                                     .short("i")
+                                     .long("input")
+                                     .takes_value(true))
                                 .get_matches();
+    let input_file = matches.value_of("input");
+    input_file.map(str::to_string)
 }
 
-use std::io::Read;
-
-fn get_tie_input_data() -> String
+fn get_tie_input_data(input_filename: Option<String>) -> String
 {
-    let mut buffer = String::new();
-    std::io::stdin().read_to_string(&mut buffer).unwrap();
+    let buffer = match input_filename {
+        Some(input_filename) => {
+            match std::fs::read_to_string(&input_filename) {
+                Ok(file_contents) => file_contents,
+                Err(error) => {
+                    eprintln!("Error reading file '{}': {}", input_filename, error);
+                    "".to_string()
+                }
+            }
+        },
+        None => {
+            let mut buffer = String::new();
+            std::io::stdin().read_to_string(&mut buffer).unwrap();
+            buffer
+        }
+    };
     buffer
 }
 
