@@ -28,14 +28,18 @@ fn get_tie_input_data() -> String
     buffer
 }
 
+// TODO: Error handling.  The input may not be valid!!!
 fn parse_tie_input_data(input: String) -> Vec<f64>
 {
     let mut numbers = Vec::new();
 
     let lines: Vec<&str> = input.lines().collect();
     for line in lines {
-        let number: f64 = line.parse().unwrap();
-        numbers.push(number);
+        let line = line.trim();
+        if !line.is_empty() {
+            let number: f64 = line.parse().unwrap(); // TODO: Error handling!
+            numbers.push(number);
+        }
     }
 
     numbers
@@ -161,6 +165,29 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
 mod tests {
 
     use super::*;
+
+    #[test]
+    pub fn test_valid_input() {
+        // Well formatted input
+        let input = "1.0\n2.0\n3.0".to_string();
+        let numbers = parse_tie_input_data(input);
+        assert_eq!(numbers, vec![1.0, 2.0, 3.0]);
+
+        // Same as above, with trailing newline
+        let input = "1.0\n2.0\n3.0\n".to_string();
+        let numbers = parse_tie_input_data(input);
+        assert_eq!(numbers, vec![1.0, 2.0, 3.0]);
+
+        // Blank lines
+        let input = "1.0\n\n\n\n2.0".to_string();
+        let numbers = parse_tie_input_data(input);
+        assert_eq!(numbers, vec![1.0, 2.0]);
+
+        // Lines with whitespace
+        let input = "1.0\n    \n2.0".to_string();
+        let numbers = parse_tie_input_data(input);
+        assert_eq!(numbers, vec![1.0, 2.0]);
+    }
 
     #[test]
     pub fn test_mtie_output_size() {
