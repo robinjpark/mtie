@@ -6,17 +6,28 @@
 //! the application is split into a binary and library to overcome
 //! limitations on doc-tests, which can only run in library crates.
 
+extern crate clap;
 #[cfg(test)]
 #[macro_use]
 extern crate time_test;
 
 /// The entry point for the "library", which implements the game.
 pub fn libmain() {
+    parse_arguments();
     let input = get_tie_input_data();
     let tie = parse_tie_input_data(input);
     println!("tie {:?}", tie);
     let mtie = mtie(&tie);
     print_mtie(&mtie);
+}
+
+fn parse_arguments() {
+    let _matches = clap::App::new("mtie")
+                                .version("0.1")
+                                .author("Robin Park <robin.j.park@gmail.com>")
+                                .about("Calculates MTIE from a set of TIE data")
+                                .long_about("Calculates MTIE from a set of TIE data.\n\nThe TIE data is passed via standard input, with one sample per line.  This program assumes that the data is evenly spaced, and is unaware of the sampling rate of the data.")
+                                .get_matches();
 }
 
 use std::io::Read;
