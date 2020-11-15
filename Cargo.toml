@@ -18,3 +18,7 @@ path = "src/lib.rs"
 anyhow = "1.0"
 clap = "2.33.0"
 time-test = "0.2.2"
+
+[dev-dependencies]
+assert_cmd = "0.10"
+predicates = "1"
