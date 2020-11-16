@@ -65,6 +65,12 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
     let lines: Vec<&str> = input.lines().collect();
     for (line_number, line) in lines.iter().enumerate() {
         let trimmed = line.trim();
+
+        // Ignore comments, which start with a "#" or "//"
+        if trimmed.starts_with("#") || trimmed.starts_with("//") {
+            continue;
+        }
+
         if !trimmed.is_empty() {
             let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
             let parse_result =  trimmed.parse::<f64>();

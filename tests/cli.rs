@@ -88,7 +88,9 @@ fn test_comments_in_file() -> Result<(), Box<dyn std::error::Error>> {
     let tmp_file_path = tmp_dir.path().join("tie");
     let mut tmp_file = File::create(&tmp_file_path)?;
     writeln!(tmp_file, "1.0")?;
-    writeln!(tmp_file, "# This is a comment")?;
+    writeln!(tmp_file, "")?; // blank line
+    writeln!(tmp_file, "# This is a comment.")?;
+    writeln!(tmp_file, "// This is also a comment!")?;
     writeln!(tmp_file, "2.1")?;
 
     let mut cmd = Command::cargo_bin("mtie")?;
