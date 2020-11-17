@@ -12,7 +12,7 @@ Calculating all possible intervals is not feasible beyond a certain point.
 ## Usage
 ```
 $ mtie --help
-mtie 0.1
+mtie 0.1.0
 Robin Park <robin.j.park@gmail.com>
 Calculates MTIE from a series of TIE input data.
 
