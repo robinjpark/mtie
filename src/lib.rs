@@ -22,8 +22,12 @@ pub fn run() -> anyhow::Result<()> {
 fn parse_arguments() -> Option<String> {
     let long_about = "Calculates MTIE from a series of TIE input data.\n\n\
                       The TIE input data is expected to be in text format, with one number per line.\n\
-                      This program assumes that the input data was sampled at a uniform rate,\n\
-                      and is unaware of the sampling rate of the data.";
+                      It is assumed that the input data was sampled at a uniform rate.\n\
+                      The MTIE calculation is unaware of the sampling rate of the data,\n\
+                      or the units of the TIE measurement.\n\n\
+                      The MTIE is printed to standard output, with each line containing:\n\
+                      - an interval\n\
+                      - the MTIE for that interval";
     let input_help = "Specifies the file containing the TIE input data.\n\
                       If this option is not given, TIE input data is taken from standard input.";
     let matches = clap::App::new("mtie")
@@ -84,10 +88,10 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
     numbers
 }
 
-fn print_mtie(mtie: &[f64])
+fn print_mtie(mtie: &[(u32, f64)])
 {
-    for val in mtie {
-        println!("{}", val);
+    for (tau, val) in mtie {
+        println!("{} {}", tau, val);
     }
 }
 
@@ -105,7 +109,7 @@ fn print_mtie(mtie: &[f64])
 /// If the input contained N samples, the output will contains N-1 values:
 /// * The first value contains the calculated MTIE for an interval of one unit.
 /// * The last value contains the MTIE for the maximum interval.
-pub fn mtie (samples: &[f64]) -> Vec<f64>
+pub fn mtie (samples: &[f64]) -> Vec<(u32, f64)>
 {
     const MAX_DATA_SET_SIZE: usize = 100_000; // Data sets bigger than this take too long to process!
     let count = samples.len();
@@ -129,7 +133,7 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
         if prev_maximum > maximum {
             maximum = prev_maximum;
         }
-        mtie.push(maximum);
+        mtie.push((tau as u32, maximum));
         prev_maximum = maximum;
     }
 
@@ -141,7 +145,7 @@ pub fn mtie (samples: &[f64]) -> Vec<f64>
 #[allow(non_snake_case)] // to allow the variable names to match the reference algorithm
 // See "Fast Algorithms for TVAR and MTIE Computation in Characterization of Network Synchronization Performance"
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf
-pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
+pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
 {
     let N = samples.len() as u32;
     let k_max = (N as f64).log2() as u32;
@@ -192,6 +196,7 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
     let mut mtie = Vec::new();
     for k in 1..k_max+1 {
         let i_max = N-2_u32.pow(k)+1;
+        let tau = (2_u32.pow(k)-1) as u32;
         let k = k as usize;
         let mut mtie_k = a_M[k][1] - a_m[k][1];
         for i in 2..i_max+1 {
@@ -200,18 +205,18 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<f64>
                 mtie_k = a_M[k][i] - a_m[k][i];
             }
         }
-        mtie.push(mtie_k);
+        mtie.push((tau, mtie_k));
     }
 
     check_monotomically_increasing(&mtie);
     mtie
 }
 
-fn check_monotomically_increasing(mtie: &[f64])
+fn check_monotomically_increasing(mtie: &[(u32, f64)])
 {
     for (index, window) in mtie.windows(2).enumerate() {
         if window[1] < window[0] {
-            panic!("MTIE is not monotomically increasing! indices {}-{} contains {} and {}.", index, index+1, window[0], window[1]);
+            panic!("MTIE is not monotomically increasing! indices {}-{} contains {} and {}.", index, index+1, window[0].1, window[1].1);
         }
     }
 }
@@ -269,60 +274,61 @@ mod tests {
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
 
+    fn test_slow_algo_values(input: Vec<f64>, expected: Vec<f64>)
+    {
+        let output = mtie(&input);
+        let values: Vec<f64> = output.clone().into_iter().map(|(_tau, mtie)| mtie).collect();
+        assert_eq!(values, expected, "mtie for {:?} is {:?}", input, output);
+    }
+
     #[test]
     pub fn test_flat_line() {
         let input = vec![0.0; 10];
         let expected = vec![0.0; 9];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
 
         let input = vec![1234.5678; 10];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        let expected = vec![0.0; 9];
+        test_slow_algo_values(input, expected);
 
         let input = vec![-1000.0; 10];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        let expected = vec![0.0; 9];
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
     pub fn test_constant_increase() {
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let expected = vec![1.0, 2.0, 3.0, 4.0];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
     pub fn test_constant_decrease() {
         let input = vec![100.0, 90.0, 80.0, 70.0, 60.0];
         let expected = vec![10.0, 20.0, 30.0, 40.0];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
     pub fn test_step() {
         let input = vec![100.0, 100.0, 100.0, 150.0, 150.0];
         let expected = vec![50.0, 50.0, 50.0, 50.0];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
     pub fn test_two_steps() {
         let input = vec![100.0, 100.0, 150.0, 150.0, 200.0];
         let expected = vec![50.0, 50.0, 100.0, 100.0];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
     pub fn test_oscillating() {
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0];
         let expected = vec![1.0, 2.0, 3.0, 4.0, 4.0, 4.0, 4.0, 4.0];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
@@ -331,8 +337,7 @@ mod tests {
         time_test!();
         let input = vec![0.0; 100_000];
         let expected = vec![0.0; 99_999];
-        let output = mtie(&input);
-        assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
+        test_slow_algo_values(input, expected);
     }
 
     #[test]
@@ -345,7 +350,7 @@ mod tests {
     #[test]
     pub fn test_fast_constant() {
         let input = vec![1.0, 1.0, 1.0, 1.0];
-        let expected = vec![0.0, 0.0];
+        let expected = vec![(1, 0.0), (3, 0.0)];
         let output = mtie_fast(&input);
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
@@ -353,7 +358,7 @@ mod tests {
     #[test]
     pub fn test_fast_slope() {
         let input = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0];
-        let expected = vec![1.0, 3.0, 7.0];
+        let expected = vec![(1, 1.0), (3, 3.0), (7, 7.0)];
         let output = mtie_fast(&input);
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
