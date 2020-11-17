@@ -1,7 +1,7 @@
 use assert_cmd::prelude::*; // Add methods on commands
 use predicates::prelude::*; // Used for writing assertions
-use std::io::Write;
 use std::fs::File;
+use std::io::Write;
 use std::process::Command; // Run programs
 use tempfile::tempdir;
 
@@ -37,7 +37,9 @@ fn test_help() -> Result<(), Box<dyn std::error::Error>> {
         .stdout(predicate::str::contains("USAGE"))
         .stdout(predicate::str::contains("Robin Park"))
         .stdout(predicate::str::contains("robin.j.park@gmail.com"))
-        .stdout(predicate::str::contains("Calculates MTIE from a series of TIE input data."));
+        .stdout(predicate::str::contains(
+            "Calculates MTIE from a series of TIE input data.",
+        ));
 
     Ok(())
 }
@@ -52,8 +54,7 @@ fn test_mtie_from_file() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(tmp_file, "3.2")?;
 
     let mut cmd = Command::cargo_bin("mtie")?;
-    cmd.arg("--input")
-        .arg(tmp_file_path);
+    cmd.arg("--input").arg(tmp_file_path);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("1.1"))
@@ -72,12 +73,13 @@ fn test_bad_data_in_file() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(tmp_file, "2.1")?;
 
     let mut cmd = Command::cargo_bin("mtie")?;
-    cmd.arg("--input")
-        .arg(tmp_file_path);
+    cmd.arg("--input").arg(tmp_file_path);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("1.1"))
-        .stderr(predicate::str::contains("Ignoring line 2 'this_is_not_a_number': it does not contain a valid number"));
+        .stderr(predicate::str::contains(
+            "Ignoring line 2 'this_is_not_a_number': it does not contain a valid number",
+        ));
 
     Ok(())
 }
@@ -94,8 +96,7 @@ fn test_comments_in_file() -> Result<(), Box<dyn std::error::Error>> {
     writeln!(tmp_file, "2.1")?;
 
     let mut cmd = Command::cargo_bin("mtie")?;
-    cmd.arg("--input")
-        .arg(tmp_file_path);
+    cmd.arg("--input").arg(tmp_file_path);
     cmd.assert()
         .success()
         .stdout(predicate::str::contains("1.1"))

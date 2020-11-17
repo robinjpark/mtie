@@ -9,7 +9,6 @@ use std::io::Read;
 
 /// The entry point for the "library", which implements the mtie application.
 pub fn run() -> anyhow::Result<()> {
-
     let input_filename = parse_arguments_for_filename();
     let input = get_tie_input_data(input_filename).context("failed to get TIE input data")?;
     let tie = parse_tie_input_data(input);
@@ -39,28 +38,28 @@ fn parse_arguments_for_filename() -> Option<String> {
     let input_help = "Specifies the file containing the TIE input data.\n\
                       If this option is not given, TIE input data is taken from standard input.";
     let matches = clap::App::new("mtie")
-                                .version("0.1")
-                                .author("Robin Park <robin.j.park@gmail.com>")
-                                .about("Calculates MTIE from a set of TIE data.")
-                                .long_about(long_about)
-                                .arg(clap::Arg::with_name("input")
-                                     .help(input_help)
-                                     .short("i")
-                                     .long("input")
-                                     .takes_value(true))
-                                .get_matches();
+        .version("0.1")
+        .author("Robin Park <robin.j.park@gmail.com>")
+        .about("Calculates MTIE from a set of TIE data.")
+        .long_about(long_about)
+        .arg(
+            clap::Arg::with_name("input")
+                .help(input_help)
+                .short("i")
+                .long("input")
+                .takes_value(true),
+        )
+        .get_matches();
     let input_file = matches.value_of("input");
     input_file.map(str::to_string)
 }
 
 // Reads the TIE input data from the given filename (or standard input),
 // returning the data in one giant String
-fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String>
-{
+fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String> {
     let buffer = match input_filename {
-        Some(input_filename) => {
-            std::fs::read_to_string(&input_filename).with_context(|| format!("Could not read file '{}'", input_filename))?
-        },
+        Some(input_filename) => std::fs::read_to_string(&input_filename)
+            .with_context(|| format!("Could not read file '{}'", input_filename))?,
         None => {
             let mut buffer = String::new();
             std::io::stdin().read_to_string(&mut buffer).unwrap();
@@ -72,8 +71,7 @@ fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String>
 
 // Parses the TIE input data, converting from a big giant string,
 // into a vector of TIE values.
-fn parse_tie_input_data(input: String) -> Vec<f64>
-{
+fn parse_tie_input_data(input: String) -> Vec<f64> {
     let mut tie_values = Vec::new();
 
     let lines: Vec<&str> = input.lines().collect();
@@ -87,13 +85,16 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
 
         if !trimmed.is_empty() {
             let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
-            let parse_result =  trimmed.parse::<f64>();
+            let parse_result = trimmed.parse::<f64>();
             match parse_result {
                 Ok(number) => tie_values.push(number),
 
                 // TODO: Is this error handling sufficient?
                 // It currently simply ignores any invalid input, outputting an error message to standard error.
-                Err(_error) => eprintln!("Ignoring line {} '{}': it does not contain a valid number", line_number, line),
+                Err(_error) => eprintln!(
+                    "Ignoring line {} '{}': it does not contain a valid number",
+                    line_number, line
+                ),
             }
         }
     }
@@ -103,16 +104,14 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
 
 // Prints the MTIE for each interval, in two columns:
 // <interval> <mtie_value>
-fn print_mtie(mtie: &[(u32, f64)])
-{
+fn print_mtie(mtie: &[(u32, f64)]) {
     for (interval, val) in mtie {
         println!("{} {}", interval, val);
     }
 }
 
 // Calculates the "complete" MTIE for a series of TIE values
-pub fn mtie_complete (samples: &[f64]) -> Vec<(u32, f64)>
-{
+pub fn mtie_complete(samples: &[f64]) -> Vec<(u32, f64)> {
     const MAX_DATA_SET_SIZE: usize = 100_000; // Data sets bigger than this take too long to process!
     let count = samples.len();
     if count > MAX_DATA_SET_SIZE {
@@ -124,7 +123,7 @@ pub fn mtie_complete (samples: &[f64]) -> Vec<(u32, f64)>
     let mut prev_maximum = 0.0;
     for tau in 1..count {
         let mut maximum = 0.0;
-        for interval_start in 0..count-tau {
+        for interval_start in 0..count - tau {
             let left_value = samples[interval_start];
             let right_value = samples[interval_start + tau];
             let difference = (right_value - left_value).abs();
@@ -143,34 +142,33 @@ pub fn mtie_complete (samples: &[f64]) -> Vec<(u32, f64)>
     mtie
 }
 
-#[allow(non_snake_case)] // to allow the variable names to match the reference algorithm
 // Calculates the "fast" MTIE for a series of TIE values.
 //
 // See "Fast Algorithms for TVAR and MTIE Computation in Characterization of Network Synchronization Performance"
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf
-pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
-{
+#[allow(non_snake_case)] // to allow the variable names to match the reference algorithm
+pub fn mtie_fast(samples: &[f64]) -> Vec<(u32, f64)> {
     let N = samples.len() as u32;
     let k_max = (N as f64).log2() as u32;
 
-    let mut a_M : std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
-    let mut a_m : std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
+    let mut a_M: std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
+    let mut a_m: std::vec::Vec<std::vec::Vec<f64>> = Vec::new();
 
     // Push a dummy row into each to allow indexing a_M and a_m by k (which starts at 1)
     a_M.push(Vec::new());
     a_m.push(Vec::new());
 
-    for k in 1..k_max+1 {
+    for k in 1..k_max + 1 {
         let k = k as usize;
         let mut a_M_k = Vec::new();
         let mut a_m_k = Vec::new();
         a_M_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         a_m_k.push(0.0); // push dummy value to allow indexing by i, which starts at 1, not 0
         if k == 1 {
-            let i_max = N-2_u32.pow(k as u32)+1;
-            for i in 1..i_max+1 {
+            let i_max = N - 2_u32.pow(k as u32) + 1;
+            for i in 1..i_max + 1 {
                 let i = i as usize;
-                let val1 = samples[i-1]; // samples are indexes by 0, not 1
+                let val1 = samples[i - 1]; // samples are indexes by 0, not 1
                 let val2 = samples[i];
                 let max = if val1 > val2 { val1 } else { val2 };
                 let min = if val1 < val2 { val1 } else { val2 };
@@ -178,15 +176,15 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
                 a_m_k.push(min);
             }
         } else {
-            let i_max = N-2_u32.pow(k as u32)+1;
-            let p = 2_u32.pow((k as u32)-1) as usize;
-            for i in 1..i_max+1 {
+            let i_max = N - 2_u32.pow(k as u32) + 1;
+            let p = 2_u32.pow((k as u32) - 1) as usize;
+            for i in 1..i_max + 1 {
                 let i = i as usize;
-                let max1 = a_M[k-1][i];
-                let max2 = a_M[k-1][i+p];
+                let max1 = a_M[k - 1][i];
+                let max2 = a_M[k - 1][i + p];
                 let max = if max1 > max2 { max1 } else { max2 };
-                let min1 = a_m[k-1][i];
-                let min2 = a_m[k-1][i+p];
+                let min1 = a_m[k - 1][i];
+                let min2 = a_m[k - 1][i + p];
                 let min = if min1 < min2 { min1 } else { min2 };
                 a_M_k.push(max);
                 a_m_k.push(min);
@@ -197,12 +195,12 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
     }
 
     let mut mtie = Vec::new();
-    for k in 1..k_max+1 {
-        let i_max = N-2_u32.pow(k)+1;
-        let tau = (2_u32.pow(k)-1) as u32;
+    for k in 1..k_max + 1 {
+        let i_max = N - 2_u32.pow(k) + 1;
+        let tau = (2_u32.pow(k) - 1) as u32;
         let k = k as usize;
         let mut mtie_k = a_M[k][1] - a_m[k][1];
-        for i in 2..i_max+1 {
+        for i in 2..i_max + 1 {
             let i = i as usize;
             if a_M[k][i] - a_m[k][i] > mtie_k {
                 mtie_k = a_M[k][i] - a_m[k][i];
@@ -215,11 +213,16 @@ pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
     mtie
 }
 
-fn check_monotomically_increasing(mtie: &[(u32, f64)])
-{
+fn check_monotomically_increasing(mtie: &[(u32, f64)]) {
     for (index, window) in mtie.windows(2).enumerate() {
         if window[1] < window[0] {
-            panic!("MTIE is not monotomically increasing! indices {}-{} contains {} and {}.", index, index+1, window[0].1, window[1].1);
+            panic!(
+                "MTIE is not monotomically increasing! indices {}-{} contains {} and {}.",
+                index,
+                index + 1,
+                window[0].1,
+                window[1].1
+            );
         }
     }
 }
@@ -277,10 +280,13 @@ mod tests {
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
 
-    fn test_slow_algo_values(input: Vec<f64>, expected: Vec<f64>)
-    {
+    fn test_slow_algo_values(input: Vec<f64>, expected: Vec<f64>) {
         let output = mtie_complete(&input);
-        let values: Vec<f64> = output.clone().into_iter().map(|(_tau, mtie)| mtie).collect();
+        let values: Vec<f64> = output
+            .clone()
+            .into_iter()
+            .map(|(_tau, mtie)| mtie)
+            .collect();
         assert_eq!(values, expected, "mtie for {:?} is {:?}", input, output);
     }
 
@@ -344,7 +350,9 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 100000 samples!  The input data size was 100001 samples.")]
+    #[should_panic(
+        expected = "Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 100000 samples!  The input data size was 100001 samples."
+    )]
     pub fn test_too_large() {
         let input = vec![0.0; 100_001];
         let _output = mtie_complete(&input);
@@ -370,9 +378,8 @@ mod tests {
     #[ignore] // Normally ignore, because it takes a long time in debug builds.
     pub fn test_fast_large() {
         time_test!();
-        let input = vec!(0.0; 20_000_000);
+        let input = vec![0.0; 20_000_000];
         let output = mtie_fast(&input);
         assert_eq!(output.len(), 24, "mtie is {:?}", output);
     }
 }
-
