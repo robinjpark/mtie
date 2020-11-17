@@ -13,8 +13,16 @@ pub fn run() -> anyhow::Result<()> {
     let input = get_tie_input_data(input_filename).context("failed to get TIE input data")?;
     let tie = parse_tie_input_data(input);
     //println!("tie {:?}", tie);
-    let mtie = mtie(&tie);
+
+    let sample_count = tie.len();
+    let mtie = if sample_count <= 100_000 {
+        mtie(&tie)
+    } else {
+        mtie_fast(&tie)
+    };
+
     print_mtie(&mtie);
+
     Ok(())
 }
 
