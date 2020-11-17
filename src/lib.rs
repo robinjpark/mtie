@@ -9,14 +9,14 @@ use std::io::Read;
 
 /// The entry point for the "library", which implements the mtie application.
 pub fn run() -> anyhow::Result<()> {
-    let input_filename = parse_arguments();
+
+    let input_filename = parse_arguments_for_filename();
     let input = get_tie_input_data(input_filename).context("failed to get TIE input data")?;
     let tie = parse_tie_input_data(input);
-    //println!("tie {:?}", tie);
 
     let sample_count = tie.len();
     let mtie = if sample_count <= 100_000 {
-        mtie(&tie)
+        mtie_complete(&tie)
     } else {
         mtie_fast(&tie)
     };
@@ -27,7 +27,7 @@ pub fn run() -> anyhow::Result<()> {
 }
 
 // Parses the command line arguments, returning the input filename, if specified
-fn parse_arguments() -> Option<String> {
+fn parse_arguments_for_filename() -> Option<String> {
     let long_about = "Calculates MTIE from a series of TIE input data.\n\n\
                       The TIE input data is expected to be in text format, with one number per line.\n\
                       It is assumed that the input data was sampled at a uniform rate.\n\
@@ -53,6 +53,8 @@ fn parse_arguments() -> Option<String> {
     input_file.map(str::to_string)
 }
 
+// Reads the TIE input data from the given filename (or standard input),
+// returning the data in one giant String
 fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String>
 {
     let buffer = match input_filename {
@@ -68,11 +70,11 @@ fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String>
     Ok(buffer)
 }
 
-// TODO: Error handling
-// The current code simply ignores any invalid input, outputting an error message to standard error.  Is that appropriate?
+// Parses the TIE input data, converting from a big giant string,
+// into a vector of TIE values.
 fn parse_tie_input_data(input: String) -> Vec<f64>
 {
-    let mut numbers = Vec::new();
+    let mut tie_values = Vec::new();
 
     let lines: Vec<&str> = input.lines().collect();
     for (line_number, line) in lines.iter().enumerate() {
@@ -87,37 +89,29 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
             let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
             let parse_result =  trimmed.parse::<f64>();
             match parse_result {
-                Ok(number) => numbers.push(number),
+                Ok(number) => tie_values.push(number),
+
+                // TODO: Is this error handling sufficient?
+                // It currently simply ignores any invalid input, outputting an error message to standard error.
                 Err(_error) => eprintln!("Ignoring line {} '{}': it does not contain a valid number", line_number, line),
             }
         }
     }
 
-    numbers
+    tie_values
 }
 
+// Prints the MTIE for each interval, in two columns:
+// <interval> <mtie_value>
 fn print_mtie(mtie: &[(u32, f64)])
 {
-    for (tau, val) in mtie {
-        println!("{} {}", tau, val);
+    for (interval, val) in mtie {
+        println!("{} {}", interval, val);
     }
 }
 
-/// Calculates the MTIE of a set of evenly spaced samples
-///
-/// # Arguments
-/// * samples
-///
-/// A slice of f64 values, containing the TIE samples.
-/// This function assumes that the samples are evenly spaced in time.
-///
-/// # Output
-/// A vector containing the calculated MTIE values.
-///
-/// If the input contained N samples, the output will contains N-1 values:
-/// * The first value contains the calculated MTIE for an interval of one unit.
-/// * The last value contains the MTIE for the maximum interval.
-pub fn mtie (samples: &[f64]) -> Vec<(u32, f64)>
+// Calculates the "complete" MTIE for a series of TIE values
+pub fn mtie_complete (samples: &[f64]) -> Vec<(u32, f64)>
 {
     const MAX_DATA_SET_SIZE: usize = 100_000; // Data sets bigger than this take too long to process!
     let count = samples.len();
@@ -149,8 +143,9 @@ pub fn mtie (samples: &[f64]) -> Vec<(u32, f64)>
     mtie
 }
 
-#[allow(dead_code)]
 #[allow(non_snake_case)] // to allow the variable names to match the reference algorithm
+// Calculates the "fast" MTIE for a series of TIE values.
+//
 // See "Fast Algorithms for TVAR and MTIE Computation in Characterization of Network Synchronization Performance"
 // https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf
 pub fn mtie_fast (samples: &[f64]) -> Vec<(u32, f64)>
@@ -266,25 +261,25 @@ mod tests {
     #[test]
     pub fn test_mtie_output_size() {
         let input = vec![1.0; 10];
-        let output = mtie(&input);
+        let output = mtie_complete(&input);
         assert_eq!(output.len(), input.len() - 1);
 
         let input = vec![0.0; 99];
-        let output = mtie(&input);
+        let output = mtie_complete(&input);
         assert_eq!(output.len(), input.len() - 1);
     }
 
     #[test]
     pub fn test_single_input() {
         let input = vec![1.0; 1];
-        let output = mtie(&input);
+        let output = mtie_complete(&input);
         let expected = Vec::new();
         assert_eq!(output, expected, "mtie for {:?} is {:?}", input, output);
     }
 
     fn test_slow_algo_values(input: Vec<f64>, expected: Vec<f64>)
     {
-        let output = mtie(&input);
+        let output = mtie_complete(&input);
         let values: Vec<f64> = output.clone().into_iter().map(|(_tau, mtie)| mtie).collect();
         assert_eq!(values, expected, "mtie for {:?} is {:?}", input, output);
     }
@@ -352,7 +347,7 @@ mod tests {
     #[should_panic(expected = "Data set is too large for this MTIE algorithm, which is O(n^2).  This algorithm will not attempt to calculate MTIE on an input of more than 100000 samples!  The input data size was 100001 samples.")]
     pub fn test_too_large() {
         let input = vec![0.0; 100_001];
-        let _output = mtie(&input);
+        let _output = mtie_complete(&input);
     }
 
     #[test]
