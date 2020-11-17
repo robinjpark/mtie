@@ -2,6 +2,9 @@
 
 Calculate MTIE from a series of TIE values.
 
+For a "small" set of TIE input data (100,000 samples or less), it will calculate the MTIE for all possible intervals.
+For a "large" set of TIE input data (more than 100,000 samples), it will only calculate the MTIE for intervals 1,3,7,15,31,...  Calculating all possible intervals is not feasible beyond a certain point.
+
 ## Acknowledgments
 [Fast Algorithms for TVAR and MTIE Computation in Characterization of Network Synchronization Performance](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf)
 
@@ -62,3 +65,5 @@ and the second column containing the MTIE for that interval.  For example:
 ## TODO
 1. Round off the MTIE value in the output file, based upon the input (or a specified precision).
 1. Improve the documentation.
+1. Provide the ability to choose between the "fast" or "complete" MTIE algorithms.
+1. Provide the ability to specify the threshold value where the programs decides which algorithm to use.
