@@ -2,6 +2,9 @@
 
 Calculate MTIE from a series of TIE values.
 
+## Acknowledgments
+[Fast Algorithms for TVAR and MTIE Computation in Characterization of Network Synchronization Performance](https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.10.3746&rep=rep1&type=pdf)
+
 ## Usage
 ```
 $ mtie --help
