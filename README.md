@@ -1,4 +1,4 @@
-# MTIE [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# MTIE [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) [![Build Status](https://travis-ci.com/github/robinjpark/mtie.png)](https://travis-ci.com/github/robinjpark/mtie)
 
 Calculate MTIE from a series of TIE values.
 
