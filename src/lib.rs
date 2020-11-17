@@ -79,7 +79,7 @@ fn parse_tie_input_data(input: String) -> Vec<f64>
         let trimmed = line.trim();
 
         // Ignore comments, which start with a "#" or "//"
-        if trimmed.starts_with("#") || trimmed.starts_with("//") {
+        if trimmed.starts_with('#') || trimmed.starts_with("//") {
             continue;
         }
 
