@@ -104,3 +104,21 @@ fn test_comments_in_file() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+
+#[test]
+fn test_digits_in_output() -> Result<(), Box<dyn std::error::Error>> {
+    let tmp_dir = tempdir()?;
+    let tmp_file_path = tmp_dir.path().join("tie");
+    let mut tmp_file = File::create(&tmp_file_path)?;
+    writeln!(tmp_file, "1.0")?;
+    writeln!(tmp_file, "1.01")?;
+
+    let mut cmd = Command::cargo_bin("mtie")?;
+    cmd.arg("--input").arg(tmp_file_path);
+    cmd.assert()
+        .success()
+        .stdout("1 0.01\n")
+        .stderr(predicate::str::is_empty());
+
+    Ok(())
+}

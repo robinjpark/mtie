@@ -64,7 +64,6 @@ and the second column containing the MTIE for that interval.  For example:
 ```
 
 ## TODO
-1. Round off the MTIE value in the output file, based upon the input (or a specified precision).
 1. Improve the documentation.
 1. Provide the ability to choose between the "fast" or "complete" MTIE algorithms.
 1. Provide the ability to specify the threshold value where the programs decides which algorithm to use.

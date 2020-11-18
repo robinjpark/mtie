@@ -11,16 +11,16 @@ use std::io::Read;
 pub fn run() -> anyhow::Result<()> {
     let input_filename = parse_arguments_for_filename();
     let input = get_tie_input_data(input_filename).context("failed to get TIE input data")?;
-    let tie = parse_tie_input_data(input);
+    let (tie_values, significant_digits) = parse_tie_input_data(&input);
 
-    let sample_count = tie.len();
+    let sample_count = tie_values.len();
     let mtie = if sample_count <= 100_000 {
-        mtie_complete(&tie)
+        mtie_complete(&tie_values)
     } else {
-        mtie_fast(&tie)
+        mtie_fast(&tie_values)
     };
 
-    print_mtie(&mtie);
+    print_mtie(&mtie, significant_digits);
 
     Ok(())
 }
@@ -54,8 +54,8 @@ fn parse_arguments_for_filename() -> Option<String> {
     input_file.map(str::to_string)
 }
 
-// Reads the TIE input data from the given filename (or standard input),
-// returning the data in one giant String
+// Reads the TIE input data from the given filename (or standard input).
+// Return the data in one giant String.
 fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String> {
     let buffer = match input_filename {
         Some(input_filename) => std::fs::read_to_string(&input_filename)
@@ -70,11 +70,12 @@ fn get_tie_input_data(input_filename: Option<String>) -> anyhow::Result<String> 
 }
 
 // Parses the TIE input data, converting from a big giant string,
-// into a vector of TIE values.
-fn parse_tie_input_data(input: String) -> Vec<f64> {
+// into a vector of TIE values, and the number of significant digits
+fn parse_tie_input_data(input: &str) -> (Vec<f64>, usize) {
     let mut tie_values = Vec::new();
 
     let lines: Vec<&str> = input.lines().collect();
+    let mut digits = 0;
     for (line_number, line) in lines.iter().enumerate() {
         let trimmed = line.trim();
 
@@ -87,7 +88,13 @@ fn parse_tie_input_data(input: String) -> Vec<f64> {
             let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
             let parse_result = trimmed.parse::<f64>();
             match parse_result {
-                Ok(number) => tie_values.push(number),
+                Ok(number) => {
+                    tie_values.push(number);
+                    let this_digits = get_significant_digits(trimmed);
+                    if this_digits > digits {
+                        digits = this_digits;
+                    }
+                },
 
                 // TODO: Is this error handling sufficient?
                 // It currently simply ignores any invalid input, outputting an error message to standard error.
@@ -99,14 +106,24 @@ fn parse_tie_input_data(input: String) -> Vec<f64> {
         }
     }
 
-    tie_values
+    (tie_values, digits)
+}
+
+fn get_significant_digits (number: &str) -> usize {
+    if !number.contains(".") {
+        0
+    } else {
+        let parts: Vec<&str> = number.split(".").collect();
+        let digits = parts[1].len();
+        digits
+    }
 }
 
 // Prints the MTIE for each interval, in two columns:
 // <interval> <mtie_value>
-fn print_mtie(mtie: &[(u32, f64)]) {
+fn print_mtie(mtie: &[(u32, f64)], significant_digits: usize) {
     for (interval, val) in mtie {
-        println!("{} {}", interval, val);
+        println!("{} {:.*}", interval, significant_digits, val);
     }
 }
 
@@ -235,30 +252,51 @@ mod tests {
     #[test]
     pub fn test_valid_input() {
         // Well formatted input
-        let input = "1.0\n2.0\n3.0".to_string();
-        let numbers = parse_tie_input_data(input);
-        assert_eq!(numbers, vec![1.0, 2.0, 3.0]);
+        let input = "1.0\n2.0\n3.0";
+        let (tie_values, _digits) = parse_tie_input_data(input);
+        assert_eq!(tie_values, vec![1.0, 2.0, 3.0]);
 
         // Same as above, with trailing newline
-        let input = "1.0\n2.0\n3.0\n".to_string();
-        let numbers = parse_tie_input_data(input);
-        assert_eq!(numbers, vec![1.0, 2.0, 3.0]);
+        let input = "1.0\n2.0\n3.0\n";
+        let (tie_values, _digits) = parse_tie_input_data(input);
+        assert_eq!(tie_values, vec![1.0, 2.0, 3.0]);
 
         // Blank lines
-        let input = "1.0\n\n\n\n2.0".to_string();
-        let numbers = parse_tie_input_data(input);
-        assert_eq!(numbers, vec![1.0, 2.0]);
+        let input = "1.0\n\n\n\n2.0";
+        let (tie_values, _digits) = parse_tie_input_data(input);
+        assert_eq!(tie_values, vec![1.0, 2.0]);
 
         // Lines with whitespace
-        let input = "1.0\n    \n2.0".to_string();
-        let numbers = parse_tie_input_data(input);
-        assert_eq!(numbers, vec![1.0, 2.0]);
+        let input = "1.0\n    \n2.0";
+        let (tie_values, _digits) = parse_tie_input_data(input);
+        assert_eq!(tie_values, vec![1.0, 2.0]);
     }
 
     #[test]
     pub fn test_invalid_input() {
-        let input = "1\nnot_a_number".to_string();
-        let _numbers = parse_tie_input_data(input);
+        let input = "1\nnot_a_number";
+        let (_tie_values, _digits) = parse_tie_input_data(input);
+    }
+
+    #[test]
+    pub fn test_significant_digits() {
+        println!("Tests that parsing the tie input data determines the correct number of significant digits\n");
+
+        let input = "1.0\n2.0";
+        let (_tie_values, digits) = parse_tie_input_data(&input);
+        assert_eq!(digits, 1, "input was {:?}", input);
+
+        let input = "1.0\n2.01";
+        let (_tie_values, digits) = parse_tie_input_data(&input);
+        assert_eq!(digits, 2, "input was {:?}", input);
+
+        let input = "1.1\n2.01\n3.100";
+        let (_tie_values, digits) = parse_tie_input_data(&input);
+        assert_eq!(digits, 3, "input was {:?}", input);
+
+        let input = "1.1\n2.01\n1234.567890";
+        let (_tie_values, digits) = parse_tie_input_data(&input);
+        assert_eq!(digits, 6, "input was {:?}", input);
     }
 
     #[test]
@@ -287,7 +325,7 @@ mod tests {
             .into_iter()
             .map(|(_tau, mtie)| mtie)
             .collect();
-        assert_eq!(values, expected, "mtie for {:?} is {:?}", input, output);
+        assert_eq!(values, expected, "mtie values for input {:?} is {:?}!  It should be {:?}", input, output, values);
     }
 
     #[test]
