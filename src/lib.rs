@@ -94,7 +94,7 @@ fn parse_tie_input_data(input: &str) -> (Vec<f64>, usize) {
                     if this_digits > digits {
                         digits = this_digits;
                     }
-                },
+                }
 
                 // TODO: Is this error handling sufficient?
                 // It currently simply ignores any invalid input, outputting an error message to standard error.
@@ -109,7 +109,7 @@ fn parse_tie_input_data(input: &str) -> (Vec<f64>, usize) {
     (tie_values, digits)
 }
 
-fn get_significant_digits (number: &str) -> usize {
+fn get_significant_digits(number: &str) -> usize {
     if !number.contains('.') {
         0
     } else {
@@ -324,7 +324,11 @@ mod tests {
             .into_iter()
             .map(|(_tau, mtie)| mtie)
             .collect();
-        assert_eq!(values, expected, "mtie values for input {:?} is {:?}!  It should be {:?}", input, output, values);
+        assert_eq!(
+            values, expected,
+            "mtie values for input {:?} is {:?}!  It should be {:?}",
+            input, output, values
+        );
     }
 
     #[test]
