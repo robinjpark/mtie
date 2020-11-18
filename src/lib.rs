@@ -110,12 +110,11 @@ fn parse_tie_input_data(input: &str) -> (Vec<f64>, usize) {
 }
 
 fn get_significant_digits (number: &str) -> usize {
-    if !number.contains(".") {
+    if !number.contains('.') {
         0
     } else {
-        let parts: Vec<&str> = number.split(".").collect();
-        let digits = parts[1].len();
-        digits
+        let parts: Vec<&str> = number.split('.').collect();
+        parts[1].len()
     }
 }
 
