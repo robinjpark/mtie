@@ -59,8 +59,8 @@ The output consists of two columns, with the first column being the interval,
 and the second column containing the MTIE for that interval.  For example:
 ```
 1 1.1
-2 1.1999999999999997
-3 1.2999999999999998
+2 1.2
+3 1.3
 ```
 
 ## TODO
