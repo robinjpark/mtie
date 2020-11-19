@@ -38,7 +38,7 @@ fn parse_arguments_for_filename() -> Option<String> {
     let input_help = "Specifies the file containing the TIE input data.\n\
                       If this option is not given, TIE input data is taken from standard input.";
     let matches = clap::App::new("mtie")
-        .version("0.1.0")
+        .version("0.1.1")
         .author("Robin Park <robin.j.park@gmail.com>")
         .about("Calculates MTIE from a set of TIE data.")
         .long_about(long_about)
