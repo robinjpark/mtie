@@ -62,8 +62,3 @@ and the second column containing the MTIE for that interval.  For example:
 2 1.2
 3 1.3
 ```
-
-## TODO
-1. Improve the documentation.
-1. Provide the ability to choose between the "fast" or "complete" MTIE algorithms.
-1. Provide the ability to specify the threshold value where the programs decides which algorithm to use.
