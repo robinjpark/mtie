@@ -77,32 +77,33 @@ fn parse_tie_input_data(input: &str) -> (Vec<f64>, usize) {
     let lines: Vec<&str> = input.lines().collect();
     let mut digits = 0;
     for (line_number, line) in lines.iter().enumerate() {
+        let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
         let trimmed = line.trim();
 
+        if trimmed.is_empty() {
+            continue; // Ignore blank lines
+        }
         // Ignore comments, which start with a "#" or "//"
         if trimmed.starts_with('#') || trimmed.starts_with("//") {
             continue;
         }
 
-        if !trimmed.is_empty() {
-            let line_number = line_number + 1; // enumerate starts at 0, but we think of files as starting at line 1.
-            let parse_result = trimmed.parse::<f64>();
-            match parse_result {
-                Ok(number) => {
-                    tie_values.push(number);
-                    let this_digits = get_significant_digits(trimmed);
-                    if this_digits > digits {
-                        digits = this_digits;
-                    }
+        let parse_result = trimmed.parse::<f64>();
+        match parse_result {
+            Ok(number) => {
+                tie_values.push(number);
+                let this_digits = get_significant_digits(trimmed);
+                if this_digits > digits {
+                    digits = this_digits;
                 }
-
-                // TODO: Is this error handling sufficient?
-                // It currently simply ignores any invalid input, outputting an error message to standard error.
-                Err(_error) => eprintln!(
-                    "Ignoring line {} '{}': it does not contain a valid number",
-                    line_number, line
-                ),
             }
+
+            // TODO: Is this error handling sufficient?
+            // It currently simply ignores any invalid input, outputting an error message to standard error.
+            Err(_error) => eprintln!(
+                "Ignoring line {} '{}': it does not contain a valid number",
+                line_number, line
+            ),
         }
     }
 
